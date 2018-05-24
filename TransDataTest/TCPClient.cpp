@@ -51,7 +51,6 @@ void CTCPClient::OnClose(int nErrorCode)
 void CTCPClient::OnReceive(int nErrorCode)
 {
 	// TODO: 在此添加专用代码和/或调用基类
-	CSingleLock lk(&m_InfoSec,TRUE);
 	int nDataLen = MAX_DATA_FILE;
 	char* pData = new char[MAX_DATA_FILE];
 	ZeroMemory(pData,nDataLen);
@@ -69,7 +68,6 @@ BOOL CTCPClient::GetSockValid()
 
 BOOL CTCPClient::WriteData(char* pData,int nTotalLen)
 {
-	CSingleLock lk(&m_SendSec,TRUE);
 	int nIndex = 0;
 	BOOL bResult = FALSE;
 	int nSendLen = Send(pData,nTotalLen);
@@ -96,14 +94,4 @@ BOOL CTCPClient::WriteData(char* pData,int nTotalLen)
 			return TRUE;
 	}
 	return FALSE;
-}
-
-CString CTCPClient::GetMessageInfo()
-{
-	CSingleLock lk(&m_InfoSec,TRUE);
-	CString strResult;
-	if(!m_MsgList.IsEmpty())
-		strResult = m_MsgList.RemoveHead();
-
-	return strResult;
 }

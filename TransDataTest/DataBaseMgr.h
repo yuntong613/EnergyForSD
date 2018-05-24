@@ -9,7 +9,6 @@ public:
 	CDataBaseMgr(void);
 	~CDataBaseMgr(void);
 	bool Init(CString strUID,CString strPassWord,CString strDSN);
-	bool Init(const char* szConnect = NULL);
 	void Release();
 protected:
 	CDBAdo m_DbAdo;

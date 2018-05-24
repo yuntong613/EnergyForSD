@@ -27,7 +27,6 @@ public:
 	bool	SetConnectionString(CString strDriver, CString strIP, WORD wPort, CString strCatalog, CString strUserID, CString strPassword);
 /*	bool	SetConnectionString(CString strDriver, CString strDataSrc, CString strPassword);*/
 	bool	SetConnectionString(CString strDSN, CString strUserID, CString strPassword);
-	bool SetConnectionString(CString strConnect);
 	bool	OpenConnection();
 	bool	CloseConnection();
 	bool	IsConnecting();

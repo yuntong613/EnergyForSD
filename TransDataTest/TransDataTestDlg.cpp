@@ -107,7 +107,6 @@ BEGIN_MESSAGE_MAP(CTransDataTestDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CHECK_UPDATETIME, &CTransDataTestDlg::OnBnClickedCheckUpdatetime)
 	ON_BN_CLICKED(IDC_BUTTON_MANUL_UPDATE, &CTransDataTestDlg::OnBnClickedButtonManulUpdate)
 	ON_BN_CLICKED(IDC_BUTTON_CLEAR, &CTransDataTestDlg::OnBnClickedButtonClear)
-	ON_EN_CHANGE(IDC_EDIT_CERT, &CTransDataTestDlg::OnEnChangeEditCert)
 END_MESSAGE_MAP()
 
 
@@ -154,9 +153,6 @@ BOOL CTransDataTestDlg::OnInitDialog()
 	CTimeSpan timSpan(0,3,0,0);
 	CTime tmStart = CTime(tmNow.GetYear(),tmNow.GetMonth(),tmNow.GetDay(),tmNow.GetHour(),0,0);
 	CTime tmEnd = tmStart + CTimeSpan(0,1,0,0);
-	
-	m_tmctlStartDate = tmStart - timSpan;
-	m_tmctlEndDate =  tmEnd - timSpan;
 
 	m_tmctlStartTime = tmStart - timSpan;
 	m_tmctlEndTime = tmEnd - timSpan;
@@ -291,37 +287,35 @@ void CTransDataTestDlg::OnProcLoadData()
 
 void CTransDataTestDlg::OnProcRecv()
 {
-	CString strData = m_Protocol.GetFirstMsg();
-	if (strData.IsEmpty())
+	if(!m_Protocol.GetMsgList().IsEmpty())
 	{
-		return ;
-	}
-	if(m_Protocol.LoginSucceed()==false)
-	{
-		BYTE* pData = new BYTE[MAX_DATA_FILE];
-		ZeroMemory(pData,MAX_DATA_FILE);
-		int nLen = 0;
-		BYTE Cert[MAX_CERT_LEN] = {0};
-		int CertLen = 0;
-		int nRet = m_Protocol.getSignerCert(Cert,CertLen,m_strSenderCert);
+		CString strData = m_Protocol.GetFirstMsg();
+		if(m_Protocol.LoginSucceed()==false)
+		{
+			BYTE* pData = new BYTE[MAX_DATA_FILE];
+			ZeroMemory(pData,MAX_DATA_FILE);
+			int nLen = 0;
+			BYTE Cert[MAX_CERT_LEN] = {0};
+			int CertLen = 0;
+			int nRet = m_Protocol.getSignerCert(Cert,CertLen,m_strSenderCert);
 
-		int nVerify = m_Protocol.VerifyMsg((BYTE*)strData.GetBuffer(),strData.GetLength(), pData,nLen);
-		strData.ReleaseBuffer();		
-		if(nVerify==0)
-			m_Protocol.ReadRecvData(m_strNodeID, pData, nLen);
-		else{
-			ShowLog(_T("解析登陆反馈失败"));
+			int nVerify = m_Protocol.VerifyMsg((BYTE*)strData.GetBuffer(),strData.GetLength(), pData,nLen);
+			strData.ReleaseBuffer();		
+			if(nVerify==0)
+				m_Protocol.ReadRecvData(m_strNodeID, pData, nLen);
+			else{
+				ShowLog(_T("解析登陆反馈失败"));
+			}
+			delete[] pData;
+		}else{
+			m_Protocol.ReadRecvData(m_strNodeID,(BYTE*)strData.GetBuffer(),strData.GetLength());
+			strData.ReleaseBuffer();
 		}
-		delete[] pData;
-	}else{
-		m_Protocol.ReadRecvData(m_strNodeID,(BYTE*)strData.GetBuffer(),strData.GetLength());
-		strData.ReleaseBuffer();
 	}
 }
 
 void CTransDataTestDlg::OnProcReload()
 {
-	CSingleLock lk(&m_ReloadSec,TRUE);
 	CString strUploadPath = m_Protocol.GetAppPath()+"upload";
 	BOOL bEmpty = PathIsDirectoryEmpty(strUploadPath);
 	if(bEmpty && m_Protocol.SocketIsConnected() && m_Protocol.LoginSucceed()){
@@ -427,9 +421,6 @@ void CTransDataTestDlg::Start()
 	ShowLog(_T("----------------------------------------------------------"));
 	ShowLog(_T("开始登陆"));
 	ShowLog(_T("正在获取证书……"));
-
-/*	m_Protocol.BeginUpload();*/
-
 	BYTE* data = new BYTE[MAX_DATA_FILE];
 	ZeroMemory(data,MAX_DATA_FILE);
 	int dataLen = 0;
@@ -445,8 +436,7 @@ void CTransDataTestDlg::Start()
 	 ShowLog(_T("获取证书成功"));
 	 ShowLog(_T("正在连接本地数据库......"));
 
-//	 bool bOpen = g_DBMgr.Init(m_strUserName,m_strPassWord,m_strDSN);
-	 bool bOpen = g_DBMgr.Init();
+	 bool bOpen = g_DBMgr.Init(m_strUserName,m_strPassWord,m_strDSN);
 	 if(!bOpen)
 	 {
 		 ShowLog(_T("连接本地数据库失败！"));
@@ -464,7 +454,7 @@ void CTransDataTestDlg::Start()
 	  //10s定时检测连接状态恢复TCP连接
 	  SetTimer(TIMER_RECONNECT,10*1000,NULL);
 	  //2分钟检查复传任务
-	  SetTimer(TIMER_RELOAD,8*1000,NULL);
+	  SetTimer(TIMER_RELOAD,10*1000,NULL);
 
 	  m_nHeartFlag = m_nHeartBeatCfgTime*60*1000;
 	  //心跳
@@ -497,7 +487,6 @@ void CTransDataTestDlg::Stop()
 
 void CTransDataTestDlg::ShowLog(CString strMsg)
 {
-	theApp.WriteLog(strMsg);
 	CTime tm = CTime::GetCurrentTime();
 	CString strTime = tm.Format("%Y-%m-%d %H:%M:%S");
 	CString strTemp = strTime + _T(" ---- ")+strMsg;
@@ -579,8 +568,6 @@ void CTransDataTestDlg::OnBnClickedCheckUpdatetime()
 void CTransDataTestDlg::OnBnClickedButtonManulUpdate()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	CSingleLock lk(&m_ReloadSec,TRUE);
-
 	UpdateData();
 	CString strStartTime,strEndTime;
 
@@ -603,10 +590,9 @@ void CTransDataTestDlg::OnBnClickedButtonManulUpdate()
 	while (tmTmp < tmEnd)
 	{
 		strStartTime = tmTmp.Format("%Y-%m-%d %H:00:00");
-		
-		tmTmp = tmTmp + CTimeSpan(0,1,0,0);
+		strEndTime = tmTmp.Format("%Y-%m-%d 23:59:59");
 
-		strEndTime = tmTmp.Format("%Y-%m-%d %H:00:00");
+		tmTmp = tmTmp + CTimeSpan(1,0,0,0);
 
 		if (tmTmp>= tmEnd)
 		{
@@ -623,8 +609,6 @@ void CTransDataTestDlg::OnBnClickedButtonManulUpdate()
 	}
 
 	iniFile.WriteInt("ReloadTask","Count",nTimes+nCount);
-
-/*	m_Protocol.BeginUploadBackUp();*/
 }
 
 
@@ -632,18 +616,4 @@ void CTransDataTestDlg::OnBnClickedButtonClear()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	m_lstInfo.ResetContent();
-}
-
-
-void CTransDataTestDlg::OnEnChangeEditCert()
-{
-	// TODO:  如果该控件是 RICHEDIT 控件，它将不
-	// 发送此通知，除非重写 CDialogEx::OnInitDialog()
-	// 函数并调用 CRichEditCtrl().SetEventMask()，
-	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
-
-	// TODO:  在此添加控件通知处理程序代码
-	UpdateData();
-	m_strSenderCert.Remove(' ');
-	UpdateData(FALSE);
 }

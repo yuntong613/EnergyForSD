@@ -122,7 +122,6 @@ public:
 	CString m_FNewQueryUploadZipFile;
 	//组写ZIP压缩包
 	BOOL MakeUploadFile(CString strStartTime="",CString strEndTime="");
-	void DeleteCathe(CString strDir);
 public:
 	//自动上传当前时间信息
 	void BeginUpload(CString StartTime="",CString EndTime="",BOOL Query=FALSE);
@@ -146,6 +145,8 @@ public: //Socket
 	void KillSocket();
 	//连接远端服务器
 	BOOL ConnectServer();
+	//获取消息队列
+	CStringList& GetMsgList();
 	//获取消息
 	CString GetFirstMsg();
 protected:

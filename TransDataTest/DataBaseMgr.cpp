@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 #include "DataBaseMgr.h"
-#include "Utils.h"
+
 #define  SQL_BUFFER_LEN 1024
 
 CDataBaseMgr::CDataBaseMgr(void)
@@ -10,34 +10,6 @@ CDataBaseMgr::CDataBaseMgr(void)
 
 CDataBaseMgr::~CDataBaseMgr(void)
 {
-}
-
-bool CDataBaseMgr::Init(const char* szConnect /*= NULL*/)
-{
-	CString strConnectStr = szConnect;
-	bool bRet = false;
-	if(!m_DbAdo.CreateInstance())
-	{
-		return false;
-	}
-	if(szConnect == NULL)
-	{
-		CUtils utl;
-		CString strFilePath = utl.GetAppPath()+"db.ini";
-		char connectStr[200] = {0};
-		DWORD dwRet = GetPrivateProfileString("DBInfo","ConnectString", "", connectStr, 200, strFilePath);
-		if (dwRet<=0)
-		{
-			return false;
-		}
-		strConnectStr = connectStr;
-	}
-	m_DbAdo.SetConnectionString(strConnectStr);
-	if(!m_DbAdo.OpenConnection())
-	{
-		return false;
-	}
-	return true;
 }
 
 bool CDataBaseMgr::Init(CString strUID,CString strPassWord,CString strDSN)
@@ -75,11 +47,6 @@ bool CDataBaseMgr::ExcuteSQL(CString strSql)
 
 bool CDataBaseMgr::GetElecHourResult(CString strStartTime,CString strEndTime,ArrElecHourResult& result)
 {
-	CString strTime = strStartTime;
-	int year,month,day,hour,min,sec = 0;
-	sscanf(strTime,"%d-%d-%d %d:%d:%d",&year,&month,&day,&hour,&min,&sec);
-	CString strTable;
-	strTable.Format("energy_history_data_hour_%04d%02d",year,month);
 	CString strSql,strFromat;
 	strFromat = "SELECT\n"
 		"	result.DATE_TIME,\n"
@@ -95,7 +62,7 @@ bool CDataBaseMgr::GetElecHourResult(CString strStartTime,CString strEndTime,Arr
 		"			tSort. CODE AS SORT_CODE,\n"
 		"			tArea.AREA_CODE\n"
 		"		FROM\n"
-		"			%s tHistory,\n"
+		"			energy_history_data tHistory,\n"
 		"			energy_item tItem,\n"
 		"			energy_item_sort tSort,\n"
 		"			energy_build_area tArea\n"
@@ -113,18 +80,18 @@ bool CDataBaseMgr::GetElecHourResult(CString strStartTime,CString strEndTime,Arr
 		"			tHistory.date_time\n"
 		"	) result\n"
 		"GROUP BY\n"
-		"	result.DATE_TIME,\n"
 		"	result.SORT_CODE,\n"
 		"	result.AREA_CODE\n"
 		"ORDER BY\n"
 		"	result.AREA_CODE,\n"
-		"	result.SORT_CODE,\n"
-		"	result.DATE_TIME";
+		"	result.SORT_CODE";
 
-	strSql.Format(strFromat,strTable,strStartTime,strEndTime);
+	strSql.Format(strFromat,strStartTime,strEndTime);
+
 	char szSQL[SQL_BUFFER_LEN] = {0};
 	memcpy(szSQL,strSql.GetBuffer(strSql.GetLength()),strSql.GetLength());
 	strSql.ReleaseBuffer();
+
 	bool bOpen = m_DbAdo.OpenRecordset(szSQL);
 
 	if(!bOpen)
