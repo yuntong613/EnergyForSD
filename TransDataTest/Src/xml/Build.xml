@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <common>
+    <UploadDataCenterID>370000A010</UploadDataCenterID>
+    <!--省级医院数据中心Id-->
+    <CreateTime>2015-01-10 03:30:00</CreateTime>
+  </common>
+  <data>    
+    <Build id="370000A010">
+      <BuildBaseInfo operation="N">
+        <F_DataCenterID>370000A010</F_DataCenterID>
+        <F_BuildName>建筑A</F_BuildName>
+        <F_AliasName>建筑A</F_AliasName>
+        <F_BuildOwner>所属</F_BuildOwner>
+        <F_State>1</F_State>
+        <F_DistrictCode>370000</F_DistrictCode>
+        <F_BuildLong>118.43</F_BuildLong>
+        <F_BuildLat>35.01</F_BuildLat>
+        <F_BuildYear>4</F_BuildYear>
+        <F_UpFloor>1</F_UpFloor>
+        <F_DownFloor>2</F_DownFloor>
+        <F_BuildFunc>E</F_BuildFunc>
+        <F_BuildSubFunc>E</F_BuildSubFunc>
+        <F_TotalArea>5000</F_TotalArea>
+        <F_AirArea>5000</F_AirArea>
+        <F_HeatArea>5000</F_HeatArea>
+        <F_AirType>B</F_AirType>
+        <F_HeatType>D</F_HeatType>
+        <F_BodyCoef>0.32</F_BodyCoef>
+        <F_StruType>D</F_StruType>
+        <F_WallMatType>A</F_WallMatType>
+        <F_WallWarmType>A</F_WallWarmType>
+        <F_WallWinType>A</F_WallWinType>
+        <F_GlassType>A</F_GlassType>
+        <F_WinFrameType>A</F_WinFrameType>
+        <F_DesignDept>单位A</F_DesignDept>
+        <F_WorkDept>单位A</F_WorkDept>
+        <F_CreateTime>2015-5-10 0:00:00</F_CreateTime>
+        <F_CreateUser>李某某</F_CreateUser>
+        <F_MonitorDate>2015-5-10 0:00:00</F_MonitorDate>
+        <F_AcceptDate>2015-11-10 0:00:00</F_AcceptDate>
+      </BuildBaseInfo>
+      <BuildExInfo operation="N">
+        <!-- N为新增，U为更新 -->
+        <F_TotalLightingPower>100</F_TotalLightingPower>
+        <!-- 照明设备总功率 -->
+        <F_TotalAirConditionHeatPower>100</F_TotalAirConditionHeatPower>
+        <!-- 空调设备总功率 -->
+        <F_TotalSpecialPowerPower>100</F_TotalSpecialPowerPower>
+        <!-- 特殊设备总功率 -->
+        <F_TotalMotivePower>100</F_TotalMotivePower>
+        <!-- 动力设备总功率 -->
+        <F_ElectriPrice>8</F_ElectriPrice>
+        <!-- 电价 -->
+        <F_WaterPrice>2</F_WaterPrice>
+        <!-- 水价 -->
+        <F_GasPrice>3.73</F_GasPrice>
+        <!-- 天然气价 -->
+        <F_HeatPrice>4</F_HeatPrice>
+        <!-- 供热价 -->
+        <F_HospitalStandard>三级甲等</F_HospitalStandard>
+        <F_HospitalType>综合医院</F_HospitalType>
+        <F_PatientNum>3000</F_PatientNum>
+        <F_HospitalBedNum>4000</F_HospitalBedNum>
+      </BuildExInfo>
+    </Build>
+  </data>
+</root>
