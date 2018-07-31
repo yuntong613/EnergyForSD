@@ -16,7 +16,9 @@ public:
 	BOOL WriteData(char* pData,int nTotalLen);
 	CStringList m_MsgList;
 	bool IsConnected(){ return m_bIsConnected; }
-
+	CCriticalSection m_InfoSec;
+	CString GetMessageInfo();
+	CCriticalSection m_SendSec;
 };
 
 

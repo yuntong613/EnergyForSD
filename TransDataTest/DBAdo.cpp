@@ -89,6 +89,11 @@ bool CDBAdo::SetConnectionString(CString strDSN, CString strUserID, CString strP
 	return true;
 }
 
+bool CDBAdo::SetConnectionString(CString strConnect)
+{
+	m_strConnect = strConnect;
+	return true;
+}
 // bool CDBAdo::SetConnectionString(CString strDriver, CString strDataSrc, CString strPassword)
 // {
 // 	CString	strProvider, strDataSource, strPWD;

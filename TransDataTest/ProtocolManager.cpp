@@ -775,15 +775,9 @@ BOOL CProtocolManager::ConnectServer()
 	return TRUE;
 }
 
-
-CStringList& CProtocolManager::GetMsgList()
-{
-	return m_ClientSock.m_MsgList;
-}
-
 CString CProtocolManager::GetFirstMsg()
 {
-	CString strHead = m_ClientSock.m_MsgList.RemoveHead();
+	CString strHead = m_ClientSock.GetMessageInfo();
 	return strHead;
 }
 
@@ -824,9 +818,9 @@ BOOL CProtocolManager::MakeUploadFile(CString strStartTime,CString strEndTime)
 	{
 		CTime tmStart = CTime(tm.GetYear(),tm.GetMonth(),tm.GetDay(),tm.GetHour(),0,0);
 		CTime tmEnd = tmStart + CTimeSpan(0,1,0,0);
-
-		// 		CIniFile iniFile(m_strSettingsPath);
-		// 		int Interval = iniFile.GetInt("Period","Hour",1);
+		
+// 		CIniFile iniFile(m_strSettingsPath);
+// 		int Interval = iniFile.GetInt("Period","Hour",1);
 
 		CTimeSpan timSpan(0,3,0,0);
 		tmStart = tmStart - timSpan;
@@ -898,15 +892,17 @@ BOOL CProtocolManager::MakeUploadFile(CString strStartTime,CString strEndTime)
  	BOOL bZip = FALSE;
  	mZip.InitPackZip(m_FNewQueryUploadZipFile);
  	CString strAccessoryPath =  GetAppPath() + "xml\\Accessory";
+	ShowLog(_T("打包附件信息"));
  	bZip = mZip.Zip_PackDirectory(strAccessoryPath);
  	if(!bZip)
- 	{
+ 	{	
  		ShowLog(_T("文件压缩失败！"));
  		mZip.RealsePackZip();
  		return FALSE;
  	}
  	if(bSetBuild)
  	{
+		ShowLog(_T("打包建筑信息"));
  		bZip = mZip.Zip_PackFile(BuildFile);
  		if(!bZip)
  		{
@@ -917,6 +913,7 @@ BOOL CProtocolManager::MakeUploadFile(CString strStartTime,CString strEndTime)
  	}
  	if(bSetEnergy)
  	{
+		ShowLog(_T("打包能耗信息"));
  		bZip = mZip.Zip_PackFile(EnergytFile);
  		if(!bZip)
  		{
@@ -932,9 +929,20 @@ BOOL CProtocolManager::MakeUploadFile(CString strStartTime,CString strEndTime)
  		return FALSE;
  	}
 
+
 	//复制文件到历史缓存
-	CString strLastFile = strCacheDir+"LastFile.zip";
-	DeleteFile(strLastFile);
+/*	DeleteCathe(strCacheDir);*/
+	CString strLastFileName;
+	CString strFlag = strStartTime;
+	strFlag.Remove('-');
+	strFlag.Remove(':');
+	strFlag.Remove(' ');
+	strLastFileName.Format("%s",strFlag);
+
+	CString strLastFile = strCacheDir+strLastFileName+".zip";
+
+//	CString strLastFile = strCacheDir+"Last.zip";
+//	DeleteFile(strLastFile);
 
 	CopyFile(m_FNewQueryUploadZipFile,strLastFile,TRUE);
 
@@ -962,6 +970,29 @@ BOOL CProtocolManager::MakeUploadFile(CString strStartTime,CString strEndTime)
 		return FALSE;
 	}
 	return TRUE;
+}
+
+void CProtocolManager::DeleteCathe(CString strDir)
+{
+	CFileFind ff; 
+	CString strDeleteFile;
+	strDir += "*.* "; 
+	int ncount =0; 
+	BOOL res = ff.FindFile(strDir); 
+	CTime lastWriteTime;
+	CTime tmDelete = CTime::GetCurrentTime();
+	CTime ctMinTime = tmDelete - CTimeSpan(3,0,0,0);
+	while(res) 
+	{ 
+		if(ff.GetLastWriteTime(lastWriteTime))
+		{
+			if(lastWriteTime<ctMinTime)
+			{
+				DeleteFile(ff.GetFilePath());
+			}
+		}
+		res = ff.FindNextFile(); 
+	}
 }
 
 void CProtocolManager::BeginUpload(CString StartTime,CString EndTime,BOOL Query)
@@ -1114,8 +1145,8 @@ BOOL CProtocolManager::SetEnergyXML(CString SourceFile,CString DestFile, CString
 // 	pTemp = m_Xml.getElement(pCommon,"UploadDataCenterID");
 // 	if(!pTemp){	m_Xml.Clear(); return FALSE; }
 
-	pTemp = m_Xml.getElement(pCommon,"CreateTime");
-	pTemp->FirstChild()->SetValue(strTimeNow);
+// 	pTemp = m_Xml.getElement(pCommon,"CreateTime");
+// 	pTemp->FirstChild()->SetValue(strTimeNow);
 
 	TiXmlElement* pData = m_Xml.getElement(pRoot,"data");
 	
@@ -1126,6 +1157,7 @@ BOOL CProtocolManager::SetEnergyXML(CString SourceFile,CString DestFile, CString
 
 	if(bGetRecord)
 	{
+		ShowLog("查询能耗数据成功");
 		CString strStartHour,strEndHour;
 		ElecHourResult ElecItem;
 		CString strIndex,strSortCode,strSumValue,strDate,strBuildID,strAreaCode;
@@ -1146,6 +1178,9 @@ BOOL CProtocolManager::SetEnergyXML(CString SourceFile,CString DestFile, CString
 
 		strEndHour = strTemp;
 		DeleteEnergySumMap();
+
+		bool bHasSum01000 = false;
+
 		for (int i=0;i<arrElecItems.GetCount();i++)
 		{
 			ElecItem = arrElecItems.GetAt(i);
@@ -1168,7 +1203,13 @@ BOOL CProtocolManager::SetEnergyXML(CString SourceFile,CString DestFile, CString
 			strSumValue = ElecItem.strSumValue;
 			strDate = ElecItem.strDateTime;
 			
-			AddSortItemToMap(strXmlBuildID,strSortCode,strSumValue);
+			if(strSortCode == "01000")
+			{
+				bHasSum01000 = true;
+			}
+			else{
+				AddSortItemToMap(strXmlBuildID,strSortCode,strSumValue);
+			}
 
 			pElecHour = m_Xml.addXmlChildElement(pBuild,"EnergyItemHourResult");
 			pTemp = m_Xml.addXmlChildElement(pElecHour,"F_HourResultID");
@@ -1315,7 +1356,7 @@ BOOL CProtocolManager::SetEnergyXML(CString SourceFile,CString DestFile, CString
 					m_Xml.addElementValue(pTemp,strXmlBuildID + "2" + strIndex);
 
 					pTemp = m_Xml.addXmlChildElement(pElecHour,"F_EnergyItemCode");
-					m_Xml.addElementValue(pTemp,"01C00");
+					m_Xml.addElementValue(pTemp,"01D00");
 
 					pTemp = m_Xml.addXmlChildElement(pElecHour,"F_StartHour");
 					m_Xml.addElementValue(pTemp,strStartHour);
@@ -1336,57 +1377,40 @@ BOOL CProtocolManager::SetEnergyXML(CString SourceFile,CString DestFile, CString
 					m_Xml.addElementValue(pTemp,"1");
 				}
 				
+				if ((!bHasSum01000) && pSum->sortSum>=0)
+				{
+					//01000
+					pElecHour = m_Xml.addXmlChildElement(pBuild,"EnergyItemHourResult");
+					pTemp = m_Xml.addXmlChildElement(pElecHour,"F_HourResultID");
+					strIndex.Format("%09d",nResultID);
+					nResultID++;
+					m_Xml.addElementValue(pTemp,strXmlBuildID + "2" + strIndex);
+
+					pTemp = m_Xml.addXmlChildElement(pElecHour,"F_EnergyItemCode");
+					m_Xml.addElementValue(pTemp,"01000");
+
+					pTemp = m_Xml.addXmlChildElement(pElecHour,"F_StartHour");
+					m_Xml.addElementValue(pTemp,strStartHour);
+
+					pTemp = m_Xml.addXmlChildElement(pElecHour,"F_EndHour");
+					m_Xml.addElementValue(pTemp,strEndHour);
+
+					pTemp = m_Xml.addXmlChildElement(pElecHour,"F_HourValue");
+					strSumValue.Format("%.2f",pSum->sortSum);
+					m_Xml.addElementValue(pTemp,strSumValue);
+
+					strTemp.Format("%.2f",atof(strSumValue)*ValueTurn);
+
+					pTemp = m_Xml.addXmlChildElement(pElecHour,"F_HourEquValue");
+					m_Xml.addElementValue(pTemp,strTemp);
+
+					pTemp = m_Xml.addXmlChildElement(pElecHour,"F_State");
+					m_Xml.addElementValue(pTemp,"1");
+				}
 
 			}
 		}
 	}
-
-#pragma region 水系统
-	//ArrWaterHourResult arrWaterItems;
-	//WaterHourResult waterItem;
-	//nRet = GetWaterHourResult(NodeID,StartTime,EndTime,arrWaterItems);
-	//TiXmlElement* pWater = NULL;
-	//for(int i=0;i<arrWaterItems.GetCount();i++)
-	//{
-	//	waterItem = arrWaterItems.GetAt(i);
-	//	strSumValue = waterItem.strSumValue;
-	//	strDate = waterItem.strDateTime;
-
-	//	pElecHour = m_Xml.addXmlChildElement(pBuild,"EnergyItemHourResult");
-	//	pTemp = m_Xml.addXmlChildElement(pElecHour,"F_HourResultID");
-	//	strIndex.Format("%09d",nResultID);
-	//	nResultID++;
-	//	m_Xml.addElementValue(pTemp,NodeID + "2" + strIndex);
-
-	//	pTemp = m_Xml.addXmlChildElement(pElecHour,"F_EnergyItemCode");
-	//	m_Xml.addElementValue(pTemp,"02000");
-
-	//	strTemp.Format("%04d-%02d-%02d %02d:%02d:%02d",nYear,nMonth,nDay,nHour,0,0);
-	//	pTemp = m_Xml.addXmlChildElement(pElecHour,"F_StartHour");
-	//	m_Xml.addElementValue(pTemp,strTemp);
-
-	//	if(nHour==23)
-	//		strTemp.Format("%04d-%02d-%02d %02d:%02d:%02d",nYear,nMonth,nDay+1,0,0,0);
-	//	else
-	//		strTemp.Format("%04d-%02d-%02d %02d:%02d:%02d",nYear,nMonth,nDay,nHour+1,0,0);
-
-	//	pTemp = m_Xml.addXmlChildElement(pElecHour,"F_EndHour");
-	//	m_Xml.addElementValue(pTemp,strTemp);
-
-	//	pTemp = m_Xml.addXmlChildElement(pElecHour,"F_HourValue");
-	//	m_Xml.addElementValue(pTemp,strSumValue);
-
-	//	strTemp.Format("%f",atof(strSumValue)*ValueTurn);
-
-	//	pTemp = m_Xml.addXmlChildElement(pElecHour,"F_HourEquValue");
-	//	m_Xml.addElementValue(pTemp,strTemp);
-
-	//	pTemp = m_Xml.addXmlChildElement(pElecHour,"F_State");
-	//	m_Xml.addElementValue(pTemp,"1");
-	//	Sleep(1);
-	//}
-	//arrWaterItems.RemoveAll();
-#pragma endregion 水系统
 
 #pragma endregion 单个建筑
 	m_Xml.saveFile(DestFile);

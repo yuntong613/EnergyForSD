@@ -9,6 +9,7 @@ class CUtils
 public:
 	CUtils(void);
 	~CUtils(void);
+	CString GetAppPath() const;
 public:
 	//************************************
 	// Method:    HexToString

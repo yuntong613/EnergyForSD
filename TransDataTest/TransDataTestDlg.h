@@ -89,5 +89,7 @@ public:
 	CTime m_tmctlEndDate;
 	CTime m_tmctlStartTime;
 	CTime m_tmctlEndTime;
+	CCriticalSection m_ReloadSec;
 	afx_msg void OnBnClickedButtonClear();
+	afx_msg void OnEnChangeEditCert();
 };

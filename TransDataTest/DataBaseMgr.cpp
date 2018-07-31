@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 #include "DataBaseMgr.h"
-
+#include "Utils.h"
 #define  SQL_BUFFER_LEN 1024
 
 CDataBaseMgr::CDataBaseMgr(void)
@@ -10,6 +10,34 @@ CDataBaseMgr::CDataBaseMgr(void)
 
 CDataBaseMgr::~CDataBaseMgr(void)
 {
+}
+
+bool CDataBaseMgr::Init(const char* szConnect /*= NULL*/)
+{
+	CString strConnectStr = szConnect;
+	bool bRet = false;
+	if(!m_DbAdo.CreateInstance())
+	{
+		return false;
+	}
+	if(szConnect == NULL)
+	{
+		CUtils utl;
+		CString strFilePath = utl.GetAppPath()+"db.ini";
+		char connectStr[200] = {0};
+		DWORD dwRet = GetPrivateProfileString("DBInfo","ConnectString", "", connectStr, 200, strFilePath);
+		if (dwRet<=0)
+		{
+			return false;
+		}
+		strConnectStr = connectStr;
+	}
+	m_DbAdo.SetConnectionString(strConnectStr);
+	if(!m_DbAdo.OpenConnection())
+	{
+		return false;
+	}
+	return true;
 }
 
 bool CDataBaseMgr::Init(CString strUID,CString strPassWord,CString strDSN)

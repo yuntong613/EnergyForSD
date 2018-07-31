@@ -16,6 +16,15 @@ CUtils::~CUtils(void)
 {
 }
 
+CString CUtils::GetAppPath() const
+{
+	TCHAR szPath[MAX_PATH] = {0};
+	GetModuleFileName(NULL, szPath, MAX_PATH);
+	CString strPath(szPath);
+	strPath = strPath.Left(strPath.ReverseFind(_T('\\'))+1);
+	return strPath;
+}
+
 CString CUtils::HexToString(const BYTE *pBuffer,size_t iBytes)
 {
 	CString result;
